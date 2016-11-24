@@ -1,162 +1,135 @@
 {
-    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
-    "contentVersion": "1.0.0.0",
-    "parameters": {
-        "vaultName": {
-            "type": "string",
-            "metadata": {
-                "description": "Name of the Recovery Services Vault"
-            }
-        },
-        "policyName": {
-            "type": "string",
-            "metadata": {
-                "description": "Name of the Backup Policy"
-            }
-        },
-        "scheduleRunDays": {
-            "type": "array",
-            "metadata": {
-                "description": "Backup Schedule will run on array of Days like, Monday, Tuesday etc. Applies in Weekly Backup Type only."
-            }
-        },
-        "scheduleRunTimes": {
-            "type": "array",
-            "metadata": {
-                "description": "Times in day when backup should be triggered. e.g. 01:00, 13:00. This will be used in LTR too for daily, weekly, monthly and yearly backup."
-            }
-        },
-        "weeklyRetentionDurationCount": {
-            "type": "int",
-            "metadata": {
-                "description": "Number of weeks you want to retain the backup"
-            }
-        },
-        "daysOfTheWeekForMontlyRetention": {
-            "type": "array",
-            "metadata": {
-                "description": "Array of Days for Monthly Retention (Min One or Max all values from scheduleRunDays, but not any other days which are not part of scheduleRunDays)"
-            }
-        },
-        "weeksOfTheMonthForMonthlyRetention": {
-            "type": "array",
-            "metadata": {
-                "description": "Array of Weeks for Monthly Retention - First, Second, Third, Fourth, Last"
-            }
-        },
-        "monthlyRetentionDurationCount": {
-            "type": "int",
-            "metadata": {
-                "description": "Number of months you want to retain the backup"
-            }
-        },
-        "monthsOfYear": {
-            "type": "array",
-            "metadata": {
-                "description": "Array of Months for Yearly Retention"
-            }
-        },
-        "daysOfTheWeekForYearlyRetention": {
-            "type": "array",
-            "metadata": {
-                "description": "Array of Days for Yearly Retention (Min One or Max all values from scheduleRunDays, but not any other days which are not part of scheduleRunDays)"
-            }
-        },
-        "weeksOfTheMonthForYearlyRetention": {
-            "type": "array",
-            "metadata": {
-                "description": "Array of Weeks for Yearly Retention - First, Second, Third, Fourth, Last"
-            }
-        },
-        "yearlyRetentionDurationCount": {
-            "type": "int",
-            "metadata": {
-                "description": "Number of years you want to retain the backup"
-            }
-        }
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "logicAppName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name for the logic app."
+      }
     },
-    "resources": [
-        {
-            "type": "Microsoft.RecoveryServices/vaults",
-            "apiVersion": "2015-11-10",
-            "name": "[parameters('vaultName')]",
-            "location": "[resourceGroup().location]",
-            "sku": {
-                "name": "RS0",
-                "tier": "Standard"
-            },
-            "properties": {}
+    "sendgridApiKey": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The SendGrid API key from the SendGrid service."
+      }
+    },
+    "sendgridName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name for the SendGrid connection."
+      }
+    }
+  },
+  "variables": {},
+  "resources": [
+    {
+      "type": "Microsoft.Web/connections",
+      "apiVersion": "2016-06-01",
+      "location": "[resourceGroup().location]",
+      "name": "[parameters('sendgridName')]",
+      "properties": {
+        "api": {
+          "id": "[concat(subscription().id,'/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/sendgrid')]"
         },
-        {
-            "apiVersion": "2015-11-10",
-            "name": "[concat(parameters('vaultName'), '/', parameters('policyName'))]",
-            "type": "Microsoft.RecoveryServices/vaults/backupPolicies",
-            "dependsOn": [
-                "[concat('Microsoft.RecoveryServices/vaults/', parameters('vaultName'))]"
-            ],
-            "location": "[resourceGroup().location]",
-            "properties": {
-                "backupManagementType": "AzureIaasVM",
-                "schedulePolicy": {
-                    "scheduleRunFrequency": "Weekly",
-                    "scheduleRunDays": "[parameters('scheduleRunDays')]",
-                    "scheduleRunTimes": "[parameters('scheduleRunTimes')]",
-                    "schedulePolicyType": "SimpleSchedulePolicy"
-                },
-                "retentionPolicy": {
-                    "dailySchedule": null,
-                    "weeklySchedule": {
-                        "daysOfTheWeek": "[parameters('scheduleRunDays')]",
-                        "retentionTimes": "[parameters('scheduleRunTimes')]",
-                        "retentionDuration": {
-                            "count": "[parameters('weeklyRetentionDurationCount')]",
-                            "durationType": "Weeks"
-                        }
-                    },
-                    "monthlySchedule": {
-                        "retentionScheduleFormatType": "Weekly",
-                        "retentionScheduleDaily": {
-                            "daysOfTheMonth": [
-                                {
-                                    "date": 1,
-                                    "isLast": false
-                                }
-                            ]
-                        },
-                        "retentionScheduleWeekly": {
-                            "daysOfTheWeek": "[parameters('daysOfTheWeekForMontlyRetention')]",
-                            "weeksOfTheMonth": "[parameters('weeksOfTheMonthForMonthlyRetention')]"
-                        },
-                        "retentionTimes": "[parameters('scheduleRunTimes')]",
-                        "retentionDuration": {
-                            "count": "[parameters('monthlyRetentionDurationCount')]",
-                            "durationType": "Months"
-                        }
-                    },
-                    "yearlySchedule": {
-                        "retentionScheduleFormatType": "Weekly",
-                        "monthsOfYear": "[parameters('monthsOfYear')]",
-                        "retentionScheduleDaily": {
-                            "daysOfTheMonth": [
-                                {
-                                    "date": 1,
-                                    "isLast": false
-                                }
-                            ]
-                        },
-                        "retentionScheduleWeekly": {
-                            "daysOfTheWeek": "[parameters('daysOfTheWeekForYearlyRetention')]",
-                            "weeksOfTheMonth": "[parameters('weeksOfTheMonthForYearlyRetention')]"
-                        },
-                        "retentionTimes": "[parameters('scheduleRunTimes')]",
-                        "retentionDuration": {
-                            "count": "[parameters('yearlyRetentionDurationCount')]",
-                            "durationType": "Years"
-                        }
-                    },
-                    "retentionPolicyType": "LongTermRetentionPolicy"
-                }
-            }
+        "displayName": "sendgrid",
+        "parameterValues": {
+          "apiKey": "[parameters('sendgridApiKey')]"
         }
-    ]
+      }
+    },
+    {
+      "type": "Microsoft.Logic/workflows",
+      "apiVersion": "2016-06-01",
+      "name": "[parameters('logicAppName')]",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/connections', parameters('sendgridName'))]"
+      ],
+      "properties": {
+        "definition": {
+          "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "$connections": {
+              "defaultValue": {},
+              "type": "Object"
+            }
+          },
+          "triggers": {
+            "manual": {
+              "type": "request",
+              "kind": "http",
+              "inputs": {
+                "schema": {
+                  "$schema": "http://json-schema.org/draft-04/schema#",
+                  "properties": {
+                    "emailbody": {
+                      "type": "string"
+                    },
+                    "from": {
+                      "type": "string"
+                    },
+                    "subject": {
+                      "type": "string"
+                    },
+                    "to": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "from",
+                    "to",
+                    "subject",
+                    "emailbody"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "actions": {
+            "Send_email": {
+              "type": "ApiConnection",
+              "inputs": {
+                "body": {
+                  "body": "@{triggerBody()['emailbody']}",
+                  "from": "@{triggerBody()['from']}",
+                  "ishtml": false,
+                  "subject": "@{triggerBody()['subject']}",
+                  "to": "@{triggerBody()['to']}"
+                },
+                "host": {
+                  "connection": {
+                    "name": "@parameters('$connections')['sendgrid']['connectionId']"
+                  }
+                },
+                "method": "post",
+                "path": "/api/mail.send.json"
+              },
+              "runAfter": {}
+            }
+          },
+          "outputs": {}
+        },
+        "parameters": {
+          "$connections": {
+            "value": {
+              "sendgrid": {
+                "id": "[concat(subscription().id,'/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/sendgrid')]",
+                "connectionId": "[resourceId('Microsoft.Web/connections', parameters('sendgridName'))]"
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {
+     "triggerURI": { 
+            "type": "string", 
+            "value": "[listCallbackURL(concat(resourceId('Microsoft.Logic/workflows/', parameters('logicAppName')), '/triggers/manual'), '2016-06-01').value]" 
+       } 
+
+  }
 }
