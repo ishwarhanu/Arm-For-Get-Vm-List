@@ -1,35 +1,4 @@
 {
-  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
-  "contentVersion": "1.0.0.0",
-  "parameters": {
-    "logicAppName": {
-      "value": "Memail"
-    },
-    "sendgridapiKey": {
-      "value": "d5ffodThR5WhqgnApRjUNA"
-    },
-    "sendgridName": {
-      "value": "Memail"
-    },
-
-    "from": {
-      "value": "ishwar.dutt@in.hanusoftware.com"
-    },
-    "to": {
-      "value": "sdplusmsptest@hanusoftware.com"
-    },
-    "subject": {
-      "value": "Email for ME"
-    },
-    "emailbody": {
-      "value": "Email body for ME content"
-    }
-
-  }
-}
-
-
-{
   "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
@@ -157,10 +126,9 @@
     }
   ],
   "outputs": {
-     "triggerURI": { 
-            "type": "string", 
-            "value": "[listCallbackURL(concat(resourceId('Microsoft.Logic/workflows/', parameters('logicAppName')), '/triggers/manual'), '2016-06-01').value]" 
-       } 
-
+    "triggerURI": {
+      "type": "string",
+      "value": "[listCallbackURL(concat(resourceId('Microsoft.Logic/workflows/', parameters('logicAppName')), '/triggers/manual'), '2016-06-01').value]"
+    }
   }
 }
